@@ -10,9 +10,7 @@ A dynamic property wrapper that behaves similarly to AppStorage in iOS 14+, prov
 ## Example
 
 ```swift
-FittingGeometryReader { geo in
-    Text("The height is now \(geo.size.height)")
-}
+@DefaultStorage("name") private var name: String
 ```
 
 ## Installation
@@ -21,4 +19,4 @@ The code is packaged as a framework. You can install manually (by copying the fi
 
 To install using Swift Package Manager, add this to the `dependencies` section of your `Package.swift` file:
 
-`.package(url: "https://github.com/SwiftUI-Plus/FittingGeometry.git", .upToNextMinor(from: "1.0.0"))`
+`.package(url: "https://github.com/SwiftUI-Plus/DefaultStorage.git", .upToNextMinor(from: "1.0.0"))`
