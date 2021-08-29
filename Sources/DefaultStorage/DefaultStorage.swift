@@ -1,13 +1,16 @@
 import Foundation
 import SwiftUI
 
-/// A property wrapper type that reflects a value from `UserDefaults` and
+/// A `Storage` property wrapped that makes use of `UserDefaults` for its store
+public typealias DefaultStorage<Value> = Storage<UserDefaults, Value>
+
+/// A property wrapper type that reflects a value from `Store` and
 /// invalidates a view on a change in value in that store.
 @propertyWrapper
-public struct DefaultStorage<Value>: DynamicProperty {
+public struct Storage<Store, Value>: DynamicProperty where Store: KeyValueStore {
 
     @ObservedObject
-    private var _value: RefStorage<Value>
+    private var _value: RefStorage<Store, Value>
     private let commitHandler: (Value) -> Void
 
     public var wrappedValue: Value {
@@ -25,14 +28,14 @@ public struct DefaultStorage<Value>: DynamicProperty {
         )
     }
 
-    private init(value: Value, store: UserDefaults? = nil, key: String, get: @escaping (Any?) -> Value?, set: @escaping (Value) -> Void) {
-        self._value = RefStorage(value: value, store: store ?? .standard, key: key, transform: get)
+    private init(value: Value, store: Store, key: String, get: @escaping (Any?) -> Value?, set: @escaping (Value) -> Void) {
+        self._value = RefStorage(value: value, store: store, key: key, transform: get)
         self.commitHandler = set
     }
 
 }
 
-public extension DefaultStorage {
+public extension Storage {
 
     /// Creates a property that can read and write to a boolean user default.
     ///
@@ -43,10 +46,10 @@ public extension DefaultStorage {
     ///     store.
     ///   - store: The store to read and write to. A value
     ///     of `nil` will use the user default store from the environment.
-    init(wrappedValue: Value, _ key: String, store: UserDefaults? = nil) where Value == Bool {
-        let store = store ?? .standard
+    init(wrappedValue: Value, _ key: String, store: Store? = nil) where Value == Bool {
+        let store = store ?? Store.main
         let value = store.value(forKey: key) as? Value ?? wrappedValue
-        self.init(value: value, store: store, key: key,
+        self.init(value: value, store: store as! Store, key: key,
                   get: { $0 as? Value },
                   set: { store.set($0, forKey: key) })
     }
@@ -60,10 +63,10 @@ public extension DefaultStorage {
     ///     store.
     ///   - store: The store to read and write to. A value
     ///     of `nil` will use the user default store from the environment.
-    init(wrappedValue: Value, _ key: String, store: UserDefaults? = nil) where Value == Int {
-        let store = store ?? .standard
+    init(wrappedValue: Value, _ key: String, store: Store? = nil) where Value == Int {
+        let store = store ?? Store.main
         let value = store.value(forKey: key) as? Value ?? wrappedValue
-        self.init(value: value, store: store, key: key,
+        self.init(value: value, store: store as! Store, key: key,
                   get: { $0 as? Value },
                   set: { store.set($0, forKey: key) })
     }
@@ -77,10 +80,10 @@ public extension DefaultStorage {
     ///     store.
     ///   - store: The store to read and write to. A value
     ///     of `nil` will use the user default store from the environment.
-    init(wrappedValue: Value, _ key: String, store: UserDefaults? = nil) where Value == Double {
-        let store = store ?? .standard
+    init(wrappedValue: Value, _ key: String, store: Store? = nil) where Value == Double {
+        let store = store ?? Store.main
         let value = store.value(forKey: key) as? Value ?? wrappedValue
-        self.init(value: value, store: store, key: key,
+        self.init(value: value, store: store as! Store, key: key,
                   get: { $0 as? Value },
                   set: { store.set($0, forKey: key) })
     }
@@ -94,10 +97,10 @@ public extension DefaultStorage {
     ///     store.
     ///   - store: The store to read and write to. A value
     ///     of `nil` will use the user default store from the environment.
-    init(wrappedValue: Value, _ key: String, store: UserDefaults? = nil) where Value == String {
-        let store = store ?? .standard
+    init(wrappedValue: Value, _ key: String, store: Store? = nil) where Value == String {
+        let store = store ?? Store.main
         let value = store.value(forKey: key) as? Value ?? wrappedValue
-        self.init(value: value, store: store, key: key,
+        self.init(value: value, store: store as! Store, key: key,
                   get: { $0 as? Value },
                   set: { store.set($0, forKey: key) })
     }
@@ -111,10 +114,10 @@ public extension DefaultStorage {
     ///     store.
     ///   - store: The store to read and write to. A value
     ///     of `nil` will use the user default store from the environment.
-    init(wrappedValue: Value, _ key: String, store: UserDefaults? = nil) where Value == URL {
-        let store = store ?? .standard
+    init(wrappedValue: Value, _ key: String, store: Store? = nil) where Value == URL {
+        let store = store ?? Store.main
         let value = store.url(forKey: key) ?? wrappedValue
-        self.init(value: value, store: store, key: key,
+        self.init(value: value, store: store as! Store, key: key,
                   get: { ($0 as? String).flatMap(URL.init) },
                   set: { store.set($0.absoluteString, forKey: key) })
     }
@@ -131,17 +134,17 @@ public extension DefaultStorage {
     ///     store.
     ///   - store: The store to read and write to. A value
     ///     of `nil` will use the user default store from the environment.
-    init(wrappedValue: Value, _ key: String, store: UserDefaults? = nil) where Value == Data {
-        let store = store ?? .standard
+    init(wrappedValue: Value, _ key: String, store: Store? = nil) where Value == Data {
+        let store = store ?? Store.main
         let value = store.value(forKey: key) as? Data ?? wrappedValue
-        self.init(value: value, store: store, key: key,
+        self.init(value: value, store: store as! Store, key: key,
                   get: { $0 as? Value },
                   set: { store.set($0, forKey: key) })
     }
 
 }
 
-public extension DefaultStorage where Value: ExpressibleByNilLiteral {
+public extension Storage where Value: ExpressibleByNilLiteral {
 
     /// Creates a property that can read and write an Optional boolean user
     /// default.
@@ -153,10 +156,10 @@ public extension DefaultStorage where Value: ExpressibleByNilLiteral {
     ///     store.
     ///   - store: The store to read and write to. A value
     ///     of `nil` will use the user default store from the environment.
-    init(_ key: String, store: UserDefaults? = nil) where Value == Bool? {
-        let store = store ?? .standard
+    init(_ key: String, store: Store? = nil) where Value == Bool? {
+        let store = store ?? Store.main
         let value = store.value(forKey: key) as? Value ?? .none
-        self.init(value: value, store: store, key: key,
+        self.init(value: value, store: store as! Store, key: key,
                   get: { $0 as? Value },
                   set: { store.set($0, forKey: key) })
     }
@@ -171,10 +174,10 @@ public extension DefaultStorage where Value: ExpressibleByNilLiteral {
     ///     store.
     ///   - store: The store to read and write to. A value
     ///     of `nil` will use the user default store from the environment.
-    init(_ key: String, store: UserDefaults? = nil) where Value == Int? {
-        let store = store ?? .standard
+    init(_ key: String, store: Store? = nil) where Value == Int? {
+        let store = store ?? Store.main
         let value = store.value(forKey: key) as? Value ?? .none
-        self.init(value: value, store: store, key: key,
+        self.init(value: value, store: store as! Store, key: key,
                   get: { $0 as? Value },
                   set: { store.set($0, forKey: key) })
     }
@@ -189,10 +192,10 @@ public extension DefaultStorage where Value: ExpressibleByNilLiteral {
     ///     store.
     ///   - store: The store to read and write to. A value
     ///     of `nil` will use the user default store from the environment.
-    init(_ key: String, store: UserDefaults? = nil) where Value == Double? {
-        let store = store ?? .standard
+    init(_ key: String, store: Store? = nil) where Value == Double? {
+        let store = store ?? Store.main
         let value = store.value(forKey: key) as? Value ?? .none
-        self.init(value: value, store: store, key: key,
+        self.init(value: value, store: store as! Store, key: key,
                   get: { $0 as? Value },
                   set: { store.set($0, forKey: key) })
     }
@@ -210,7 +213,7 @@ public extension DefaultStorage where Value: ExpressibleByNilLiteral {
     init(_ key: String, store: UserDefaults? = nil) where Value == String? {
         let store = store ?? .standard
         let value = store.value(forKey: key) as? Value ?? .none
-        self.init(value: value, store: store, key: key,
+        self.init(value: value, store: store as! Store, key: key,
                   get: { $0 as? Value },
                   set: { store.set($0, forKey: key) })
     }
@@ -225,10 +228,10 @@ public extension DefaultStorage where Value: ExpressibleByNilLiteral {
     ///     store.
     ///   - store: The store to read and write to. A value
     ///     of `nil` will use the user default store from the environment.
-    init(_ key: String, store: UserDefaults? = nil) where Value == URL? {
-        let store = store ?? .standard
+    init(_ key: String, store: Store? = nil) where Value == URL? {
+        let store = store ?? Store.main
         let value = store.url(forKey: key) ?? .none
-        self.init(value: value, store: store, key: key,
+        self.init(value: value, store: store as! Store, key: key,
                   get: { ($0 as? String).flatMap(URL.init) },
                   set: { store.set($0?.absoluteString, forKey: key) })
     }
@@ -243,17 +246,17 @@ public extension DefaultStorage where Value: ExpressibleByNilLiteral {
     ///     store.
     ///   - store: The store to read and write to. A value
     ///     of `nil` will use the user default store from the environment.
-    init(_ key: String, store: UserDefaults? = nil) where Value == Data? {
-        let store = store ?? .standard
+    init(_ key: String, store: Store? = nil) where Value == Data? {
+        let store = store ?? Store.main
         let value = store.value(forKey: key) as? Value ?? .none
-        self.init(value: value, store: store, key: key,
+        self.init(value: value, store: store as! Store, key: key,
                   get: { $0 as? Value },
                   set: { store.set($0, forKey: key) })
     }
 
 }
 
-public extension DefaultStorage where Value: RawRepresentable {
+public extension Storage where Value: RawRepresentable {
 
     /// Creates a property that can read and write to a string user default,
     /// transforming that to `RawRepresentable` data type.
@@ -275,11 +278,11 @@ public extension DefaultStorage where Value: RawRepresentable {
     ///     store.
     ///   - store: The store to read and write to. A value
     ///     of `nil` will use the user default store from the environment.
-    init(wrappedValue: Value, _ key: String, store: UserDefaults? = nil) where Value.RawValue == String {
-        let store = store ?? .standard
+    init(wrappedValue: Value, _ key: String, store: Store? = nil) where Value.RawValue == String {
+        let store = store ?? Store.main
         let rawValue = store.value(forKey: key) as? Value.RawValue
         let value = rawValue.flatMap(Value.init) ?? wrappedValue
-        self.init(value: value, store: store, key: key,
+        self.init(value: value, store: store as! Store, key: key,
                   get: { $0 as? Value },
                   set: { store.setValue($0.rawValue, forKey: key) })
     }
@@ -304,27 +307,32 @@ public extension DefaultStorage where Value: RawRepresentable {
     ///     store.
     ///   - store: The store to read and write to. A value
     ///     of `nil` will use the user default store from the environment.
-    init(wrappedValue: Value, _ key: String, store: UserDefaults? = nil) where Value.RawValue == Int {
-        let store = store ?? .standard
+    init(wrappedValue: Value, _ key: String, store: Store? = nil) where Value.RawValue == Int {
+        let store = store ?? Store.main
         let rawValue = store.value(forKey: key) as? Value.RawValue
         let value = rawValue.flatMap(Value.init) ?? wrappedValue
-        self.init(value: value, store: store, key: key,
+        self.init(value: value, store: store as! Store, key: key,
                   get: { $0 as? Value },
                   set: { store.setValue($0.rawValue, forKey: key) })
     }
 
 }
 
-private final class RefStorage<Value>: NSObject, ObservableObject {
+private final class RefStorage<Store, Value>: NSObject, ObservableObject where Store: KeyValueStore {
 
-    @Published fileprivate var value: Value
+    @Published
+    fileprivate var value: Value
 
     private let defaultValue: Value
-    private let store: UserDefaults
+    private let store: Store
     private let key: String
     private let transform: (Any?) -> Value?
 
-    init(value: Value, store: UserDefaults, key: String, transform: @escaping (Any?) -> Value?) {
+    deinit {
+        store.removeObserver(self, forKeyPath: key)
+    }
+
+    init(value: Value, store: Store, key: String, transform: @escaping (Any?) -> Value?) {
         self.value = value
         self.defaultValue = value
         self.store = store
@@ -339,8 +347,22 @@ private final class RefStorage<Value>: NSObject, ObservableObject {
                                of object: Any?,
                                change: [NSKeyValueChangeKey : Any]?,
                                context: UnsafeMutableRawPointer?) {
-        guard let store = object as? UserDefaults, store == self.store, keyPath == self.key else { return }
         value = change?[.newKey].flatMap(transform) ?? defaultValue
     }
 
+}
+
+public protocol KeyValueStore: NSObject {
+    static var main: KeyValueStore { get }
+    var dictionaryRepresentation: [String: Any] { get }
+    func set(_ value: Any?, forKey key: String)
+    func value(forKey key: String) -> Any?
+    func url(forKey key: String) -> URL?
+}
+
+extension UserDefaults: KeyValueStore {
+    public static var main: KeyValueStore { UserDefaults.standard }
+    public var dictionaryRepresentation: [String : Any] {
+        dictionaryRepresentation()
+    }
 }
