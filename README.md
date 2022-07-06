@@ -5,8 +5,8 @@
 
 ----
 
-> This library and all other backports in the SwiftUI+ collection, have now been migrated into a single Backports library, with a LOT more additions. This should simply my efforts and allow me and others to contribute more backports in the near future.
-> [SwiftUI Backports](https://shaps80/SwiftUIBackports)
+> This backport is now available as `AppStorage`, in a single Backports library, with a LOT more additions. This should simply my efforts and allow me and others to contribute more backports in the near future.
+> [SwiftUI Backports](https://github.com/shaps80/SwiftUIBackports)
 
 ----
 
